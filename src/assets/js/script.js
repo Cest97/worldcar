@@ -81,3 +81,29 @@ navigation.addEventListener("click", (event) => {
     navigation.classList.remove("is-open");
   }
 });
+
+const mapDialog = document.querySelector(".map-dialog");
+const mapDialogTitle = document.querySelector("#map-dialog-title");
+const mapDialogFrame = mapDialog.querySelector("iframe");
+
+document.querySelectorAll(".branch-card__map-trigger").forEach((trigger) => {
+  trigger.addEventListener("click", () => {
+    mapDialogTitle.textContent = trigger.dataset.mapTitle;
+    mapDialogFrame.src = trigger.dataset.mapSrc;
+    mapDialog.showModal();
+  });
+});
+
+mapDialog.querySelector(".map-dialog__close").addEventListener("click", () => {
+  mapDialog.close();
+});
+
+mapDialog.addEventListener("click", (event) => {
+  if (event.target === mapDialog) {
+    mapDialog.close();
+  }
+});
+
+mapDialog.addEventListener("close", () => {
+  mapDialogFrame.src = "about:blank";
+});
