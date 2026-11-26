@@ -67,6 +67,110 @@ document.querySelector(".carousel").addEventListener("focusout", startAutoplay);
 reducedMotion.addEventListener("change", startAutoplay);
 startAutoplay();
 
+const testimonialCarousel = document.querySelector(".testimonials__carousel");
+const testimonialTrack = testimonialCarousel.querySelector(".testimonials__track");
+const testimonialCurrent = testimonialCarousel.querySelector(".testimonials__current");
+const testimonialPrevious = testimonialCarousel.querySelector(".testimonials__arrow--previous");
+const testimonialNext = testimonialCarousel.querySelector(".testimonials__arrow--next");
+const testimonialCards = Array.from(testimonialTrack.children);
+const testimonialCount = testimonialCards.length;
+
+let testimonialIndex = 0;
+let testimonialVisible = 0;
+let testimonialTimer;
+
+function stopTestimonialAutoplay() {
+  window.clearInterval(testimonialTimer);
+}
+
+function updateTestimonialCarousel() {
+  const card = testimonialTrack.children[testimonialIndex];
+  const offset = card.offsetLeft - testimonialTrack.children[0].offsetLeft;
+  const current = ((testimonialIndex - testimonialVisible) % testimonialCount + testimonialCount) % testimonialCount;
+
+  testimonialTrack.style.transform = `translateX(-${offset}px)`;
+  testimonialCurrent.textContent = String(current + 1).padStart(2, "0");
+}
+
+function showNextTestimonial(direction) {
+  testimonialIndex += direction;
+  updateTestimonialCarousel();
+}
+
+function configureTestimonialCarousel() {
+  const visible = Number.parseInt(
+    window.getComputedStyle(testimonialCarousel).getPropertyValue("--testimonial-visible"),
+    10
+  );
+
+  if (visible === testimonialVisible) {
+    updateTestimonialCarousel();
+    return;
+  }
+
+  stopTestimonialAutoplay();
+  testimonialTrack.querySelectorAll(".is-clone").forEach((clone) => clone.remove());
+
+  const previousClones = testimonialCards.slice(-visible).map((card) => {
+    const clone = card.cloneNode(true);
+    clone.classList.add("is-clone");
+    clone.setAttribute("aria-hidden", "true");
+    return clone;
+  });
+  const nextClones = testimonialCards.slice(0, visible).map((card) => {
+    const clone = card.cloneNode(true);
+    clone.classList.add("is-clone");
+    clone.setAttribute("aria-hidden", "true");
+    return clone;
+  });
+
+  testimonialTrack.prepend(...previousClones);
+  testimonialTrack.append(...nextClones);
+  testimonialVisible = visible;
+  testimonialIndex = visible;
+  updateTestimonialCarousel();
+  startTestimonialAutoplay();
+}
+
+function startTestimonialAutoplay() {
+  stopTestimonialAutoplay();
+
+  if (!reducedMotion.matches && !document.hidden) {
+    testimonialTimer = window.setInterval(() => showNextTestimonial(1), 5000);
+  }
+}
+
+testimonialTrack.addEventListener("transitionend", (event) => {
+  if (event.target !== testimonialTrack || event.propertyName !== "transform") {
+    return;
+  }
+
+  if (testimonialIndex >= testimonialVisible + testimonialCount) {
+    testimonialTrack.classList.add("is-resetting");
+    testimonialIndex = testimonialVisible;
+    updateTestimonialCarousel();
+    testimonialTrack.getBoundingClientRect();
+    testimonialTrack.classList.remove("is-resetting");
+  } else if (testimonialIndex < testimonialVisible) {
+    testimonialTrack.classList.add("is-resetting");
+    testimonialIndex = testimonialVisible + testimonialCount - 1;
+    updateTestimonialCarousel();
+    testimonialTrack.getBoundingClientRect();
+    testimonialTrack.classList.remove("is-resetting");
+  }
+});
+
+testimonialPrevious.addEventListener("click", () => showNextTestimonial(-1));
+testimonialNext.addEventListener("click", () => showNextTestimonial(1));
+testimonialCarousel.addEventListener("pointerenter", stopTestimonialAutoplay);
+testimonialCarousel.addEventListener("pointerleave", startTestimonialAutoplay);
+testimonialCarousel.addEventListener("focusin", stopTestimonialAutoplay);
+testimonialCarousel.addEventListener("focusout", startTestimonialAutoplay);
+window.addEventListener("resize", configureTestimonialCarousel);
+document.addEventListener("visibilitychange", startTestimonialAutoplay);
+reducedMotion.addEventListener("change", startTestimonialAutoplay);
+configureTestimonialCarousel();
+
 menuToggle.addEventListener("click", () => {
   const isExpanded = menuToggle.getAttribute("aria-expanded") === "true";
   menuToggle.setAttribute("aria-expanded", String(!isExpanded));
